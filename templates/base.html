@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{title}} · {{site}}</title>
+<meta name="description" content="{{description}}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3/dist/tabler-icons.min.css">
+<link rel="stylesheet" href="style.css">
+<script>
+try {
+  var t = localStorage.getItem('qa-notes:theme'); if (t) document.documentElement.dataset.theme = t;
+  if (localStorage.getItem('qa-notes:sb') === 'mini') document.documentElement.classList.add('sb-mini');
+  var w = localStorage.getItem('qa-notes:sb-w'); if (w) document.documentElement.style.setProperty('--sb-w', w + 'px');
+} catch (e) {}
+</script>
+</head>
+<body class="{{page}}" data-slug="{{slug}}">
+
+<header class="topbar">
+  <button class="icon-btn" id="sb-open" type="button" aria-label="Открыть меню"><i class="ti ti-menu-2"></i></button>
+  <a class="topbar-brand" href="index.html">{{site}}</a>
+</header>
+
+<div class="shell">
+{{sidebar}}
+  <div class="scrim" id="scrim"></div>
+  <main class="main">
+{{content}}
+  </main>
+</div>
+
+<script>
+(function () {
+  var root = document.documentElement;
+
+  // тема
+  function theme() {
+    return root.dataset.theme || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+  }
+  document.querySelectorAll('[data-action=theme]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var t = theme() === 'dark' ? 'light' : 'dark';
+      root.dataset.theme = t;
+      try { localStorage.setItem('qa-notes:theme', t); } catch (e) {}
+    });
+  });
+
+  // сворачивание меню (десктоп) и выезжающее меню (телефон)
+  var mobile = matchMedia('(max-width: 760px)');
+  document.getElementById('sb-toggle').addEventListener('click', function () {
+    if (mobile.matches) { document.body.classList.remove('sb-open'); return; }
+    var mini = root.classList.toggle('sb-mini');
+    try { localStorage.setItem('qa-notes:sb', mini ? 'mini' : 'full'); } catch (e) {}
+  });
+  document.getElementById('sb-open').addEventListener('click', function () { document.body.classList.add('sb-open'); });
+  document.getElementById('scrim').addEventListener('click', function () { document.body.classList.remove('sb-open'); });
+
+  // ширина меню: тянуть за правый край
+  var grip = document.getElementById('sb-resize'), sb = document.getElementById('sb');
+  grip.addEventListener('pointerdown', function (e) {
+    e.preventDefault();
+    grip.setPointerCapture(e.pointerId);
+    root.classList.add('sb-drag');
+    var left = sb.getBoundingClientRect().left;
+    var move = function (ev) {
+      var w = Math.round(Math.min(480, Math.max(200, ev.clientX - left)));
+      root.style.setProperty('--sb-w', w + 'px');
+      try { localStorage.setItem('qa-notes:sb-w', w); } catch (err) {}
+    };
+    var up = function () {
+      root.classList.remove('sb-drag');
+      grip.removeEventListener('pointermove', move);
+      grip.removeEventListener('pointerup', up);
+    };
+    grip.addEventListener('pointermove', move);
+    grip.addEventListener('pointerup', up);
+  });
+  grip.addEventListener('dblclick', function () {
+    root.style.removeProperty('--sb-w');
+    try { localStorage.removeItem('qa-notes:sb-w'); } catch (e) {}
+  });
+
+  // группы в меню
+  document.querySelectorAll('.grp-h').forEach(function (h) {
+    h.addEventListener('click', function () {
+      if (root.classList.contains('sb-mini') && !mobile.matches) {
+        root.classList.remove('sb-mini');
+        try { localStorage.setItem('qa-notes:sb', 'full'); } catch (e) {}
+        return;
+      }
+      h.parentElement.classList.toggle('closed');
+    });
+  });
+
+  // чек-лист: отметки хранятся в браузере читателя
+  var boxes = document.querySelectorAll('.checklist input[type=checkbox]');
+  if (boxes.length) {
+    var key = 'qa-notes:check:' + document.body.dataset.slug, saved = [];
+    try { saved = JSON.parse(localStorage.getItem(key) || '[]'); } catch (e) {}
+    var cnt = document.getElementById('ck-count'), bar = document.getElementById('ck-bar');
+    var update = function () {
+      var on = [];
+      boxes.forEach(function (cb, i) { if (cb.checked) on.push(i); });
+      try { localStorage.setItem(key, JSON.stringify(on)); } catch (e) {}
+      cnt.textContent = on.length + ' / ' + boxes.length;
+      bar.style.width = (on.length / boxes.length * 100) + '%';
+    };
+    boxes.forEach(function (cb, i) {
+      if (saved.indexOf(i) >= 0) cb.checked = true;
+      cb.addEventListener('change', update);
+    });
+    update();
+    var reset = document.getElementById('ck-reset');
+    if (reset) reset.addEventListener('click', function () {
+      boxes.forEach(function (cb) { cb.checked = false; }); update();
+    });
+  }
+
+  // оглавление: подсветка текущего раздела
+  var toc = document.querySelectorAll('.toc a');
+  if (toc.length && 'IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        toc.forEach(function (a) { a.classList.toggle('on', a.getAttribute('href') === '#' + e.target.id); });
+      });
+    }, { rootMargin: '0px 0px -70% 0px' });
+    document.querySelectorAll('.sec-h').forEach(function (s) { io.observe(s); });
+  }
+})();
+</script>
+<script src="cat.js"></script>
+{{scripts}}
+</body>
+</html>

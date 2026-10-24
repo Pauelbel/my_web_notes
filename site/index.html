@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Граф · qa-notes</title>
+<meta name="description" content="Технология → зачем она → как бы я её тестировал">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3/dist/tabler-icons.min.css">
+<link rel="stylesheet" href="style.css">
+<script>
+try {
+  var t = localStorage.getItem('qa-notes:theme'); if (t) document.documentElement.dataset.theme = t;
+  if (localStorage.getItem('qa-notes:sb') === 'mini') document.documentElement.classList.add('sb-mini');
+  var w = localStorage.getItem('qa-notes:sb-w'); if (w) document.documentElement.style.setProperty('--sb-w', w + 'px');
+} catch (e) {}
+</script>
+</head>
+<body class="p-graph" data-slug="graph">
+
+<header class="topbar">
+  <button class="icon-btn" id="sb-open" type="button" aria-label="Открыть меню"><i class="ti ti-menu-2"></i></button>
+  <a class="topbar-brand" href="index.html">qa-notes</a>
+</header>
+
+<div class="shell">
+  <aside class="sb" id="sb">
+    <div class="sb-head">
+      <div class="avatar">ПБ</div>
+      <div class="who"><div class="name">Павел Белов</div><div class="sub">QA · чек-листы</div></div>
+      <button class="icon-btn" id="sb-toggle" type="button" aria-label="Свернуть меню"><i class="ti ti-layout-sidebar-left-collapse"></i></button>
+    </div>
+    <a class="it on" href="index.html"><i class="ti ti-share"></i><span class="lbl">Граф</span></a>
+    <a class="it" href="all.html"><i class="ti ti-list"></i><span class="lbl">Все заметки</span><span class="cnt">1</span></a>
+    <div class="hr"></div>
+    <div class="grp ws closed"><button class="it grp-h" type="button"><i class="ti ti-folder"></i><span class="lbl">protocols</span><span class="n">· 1</span></button><div class="grp-b ws-notes"><a class="it" href="xml.html"><span class="dot draft"></span><span class="lbl">XML</span></a></div></div>
+    <div class="sb-spacer"></div>
+    <div class="hr"></div>
+    <a class="it" href="about.html"><i class="ti ti-user"></i><span class="lbl">Обо мне</span></a>
+    <a class="it" href="https://github.com/Pauelbel" target="_blank" rel="noopener"><i class="ti ti-brand-github"></i><span class="lbl">GitHub</span></a>
+    <button class="it" type="button" data-action="theme"><i class="ti ti-contrast"></i><span class="lbl">Тема</span></button>
+    <div class="it-row">
+      <button class="it" type="button" data-action="cat"><i class="ti ti-cat"></i><span class="lbl">Котик</span></button>
+      <button class="icon-btn feed" type="button" data-action="feed" title="Покормить котика" aria-label="Покормить котика"><i class="ti ti-fish"></i></button>
+    </div>
+  </aside>
+  <div class="sb-resize" id="sb-resize" aria-hidden="true"></div>
+  <div class="scrim" id="scrim"></div>
+  <main class="main">
+<div class="graph-page">
+  <div class="graph-head">
+    <div><h1>qa-notes</h1><p class="lead">Технология → зачем она → как бы я её тестировал</p></div>
+    <div class="legend"><span><span class="dot done"></span>done</span><span><span class="dot draft"></span>draft</span><span><span class="dot todo"></span>todo</span></div>
+  </div>
+  <svg id="graph" aria-label="Граф связей между заметками"></svg>
+  <div class="graph-tip" id="graph-tip">Тяни точки, колесо — масштаб, клик — открыть заметку</div>
+  <div class="graph-tools">
+    <button class="icon-btn" type="button" data-zoom="in" aria-label="Приблизить"><i class="ti ti-plus"></i></button>
+    <button class="icon-btn" type="button" data-zoom="out" aria-label="Отдалить"><i class="ti ti-minus"></i></button>
+    <button class="icon-btn" type="button" data-zoom="reset" aria-label="Сбросить вид"><i class="ti ti-focus-centered"></i></button>
+  </div>
+  <script type="application/json" id="graph-data">{"nodes": [{"id": "xml", "title": "XML", "status": "draft", "ws": "protocols", "deg": 0}], "links": []}</script>
+</div>
+  </main>
+</div>
+
+<script>
+(function () {
+  var root = document.documentElement;
+
+  // тема
+  function theme() {
+    return root.dataset.theme || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+  }
+  document.querySelectorAll('[data-action=theme]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var t = theme() === 'dark' ? 'light' : 'dark';
+      root.dataset.theme = t;
+      try { localStorage.setItem('qa-notes:theme', t); } catch (e) {}
+    });
+  });
+
+  // сворачивание меню (десктоп) и выезжающее меню (телефон)
+  var mobile = matchMedia('(max-width: 760px)');
+  document.getElementById('sb-toggle').addEventListener('click', function () {
+    if (mobile.matches) { document.body.classList.remove('sb-open'); return; }
+    var mini = root.classList.toggle('sb-mini');
+    try { localStorage.setItem('qa-notes:sb', mini ? 'mini' : 'full'); } catch (e) {}
+  });
+  document.getElementById('sb-open').addEventListener('click', function () { document.body.classList.add('sb-open'); });
+  document.getElementById('scrim').addEventListener('click', function () { document.body.classList.remove('sb-open'); });
+
+  // ширина меню: тянуть за правый край
+  var grip = document.getElementById('sb-resize'), sb = document.getElementById('sb');
+  grip.addEventListener('pointerdown', function (e) {
+    e.preventDefault();
+    grip.setPointerCapture(e.pointerId);
+    root.classList.add('sb-drag');
+    var left = sb.getBoundingClientRect().left;
+    var move = function (ev) {
+      var w = Math.round(Math.min(480, Math.max(200, ev.clientX - left)));
+      root.style.setProperty('--sb-w', w + 'px');
+      try { localStorage.setItem('qa-notes:sb-w', w); } catch (err) {}
+    };
+    var up = function () {
+      root.classList.remove('sb-drag');
+      grip.removeEventListener('pointermove', move);
+      grip.removeEventListener('pointerup', up);
+    };
+    grip.addEventListener('pointermove', move);
+    grip.addEventListener('pointerup', up);
+  });
+  grip.addEventListener('dblclick', function () {
+    root.style.removeProperty('--sb-w');
+    try { localStorage.removeItem('qa-notes:sb-w'); } catch (e) {}
+  });
+
+  // группы в меню
+  document.querySelectorAll('.grp-h').forEach(function (h) {
+    h.addEventListener('click', function () {
+      if (root.classList.contains('sb-mini') && !mobile.matches) {
+        root.classList.remove('sb-mini');
+        try { localStorage.setItem('qa-notes:sb', 'full'); } catch (e) {}
+        return;
+      }
+      h.parentElement.classList.toggle('closed');
+    });
+  });
+
+  // чек-лист: отметки хранятся в браузере читателя
+  var boxes = document.querySelectorAll('.checklist input[type=checkbox]');
+  if (boxes.length) {
+    var key = 'qa-notes:check:' + document.body.dataset.slug, saved = [];
+    try { saved = JSON.parse(localStorage.getItem(key) || '[]'); } catch (e) {}
+    var cnt = document.getElementById('ck-count'), bar = document.getElementById('ck-bar');
+    var update = function () {
+      var on = [];
+      boxes.forEach(function (cb, i) { if (cb.checked) on.push(i); });
+      try { localStorage.setItem(key, JSON.stringify(on)); } catch (e) {}
+      cnt.textContent = on.length + ' / ' + boxes.length;
+      bar.style.width = (on.length / boxes.length * 100) + '%';
+    };
+    boxes.forEach(function (cb, i) {
+      if (saved.indexOf(i) >= 0) cb.checked = true;
+      cb.addEventListener('change', update);
+    });
+    update();
+    var reset = document.getElementById('ck-reset');
+    if (reset) reset.addEventListener('click', function () {
+      boxes.forEach(function (cb) { cb.checked = false; }); update();
+    });
+  }
+
+  // оглавление: подсветка текущего раздела
+  var toc = document.querySelectorAll('.toc a');
+  if (toc.length && 'IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        toc.forEach(function (a) { a.classList.toggle('on', a.getAttribute('href') === '#' + e.target.id); });
+      });
+    }, { rootMargin: '0px 0px -70% 0px' });
+    document.querySelectorAll('.sec-h').forEach(function (s) { io.observe(s); });
+  }
+})();
+</script>
+<script src="cat.js"></script>
+<script src="graph.js"></script>
+</body>
+</html>
