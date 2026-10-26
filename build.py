@@ -9,6 +9,7 @@ import json
 import math
 import re
 import shutil
+from html.parser import HTMLParser
 from pathlib import Path
 
 import markdown
@@ -17,6 +18,8 @@ ROOT = Path(__file__).parent
 NOTES_DIR = ROOT / "notes"
 TEMPLATES = ROOT / "templates"
 OUT = ROOT / "site"
+INDEX = ROOT / "INDEX.md"  # каталог заметок для агента, пишется при каждой сборке
+ABOUT = ROOT / "about.md"  # страница «Обо мне»: вне notes/, агент её не правит
 
 # ── настройки ──────────────────────────────────────────────
 SITE = "qa-notes"
@@ -54,6 +57,18 @@ def fmt_date(iso):
 
 # ── чтение заметок ─────────────────────────────────────────
 
+def section_title(folder):
+    """Название раздела на сайте: title из <папка>/_section.md, иначе имя папки."""
+    f = folder / "_section.md"
+    if f.exists():
+        m = FRONTMATTER.match(f.read_text(encoding="utf-8-sig").rstrip() + "\n")
+        for line in (m.group(1).splitlines() if m else []):
+            k, _, v = line.partition(":")
+            if k.strip() == "title" and v.strip():
+                return v.strip()
+    return folder.name
+
+
 def parse_note(path):
     text = path.read_text(encoding="utf-8")
     meta = {}
@@ -70,7 +85,7 @@ def parse_note(path):
         "meta": meta,
         "slug": path.stem,
         "title": meta.get("title", path.stem),
-        "ws": meta.get("category", path.parent.name if path.parent != NOTES_DIR else "misc"),
+        "ws": meta.get("category", section_title(path.parent) if path.parent != NOTES_DIR else "misc"),
         "status": status if status in STATUSES else "draft",
         "summary": meta.get("summary", ""),
         "updated": meta.get("updated", ""),
@@ -114,7 +129,51 @@ def check(notes):
             warn("имя файла — латиницей через дефис (redis.md, rest-api.md); по-русски пишется title")
         for slug in n["broken"]:
             warn(f"[[{slug}]] — такой заметки нет")
+    for folder in sorted({NOTES_DIR / Path(n["path"]).parent for n in notes.values()} - {NOTES_DIR}):
+        if section_title(folder) == folder.name and folder.name.isascii():
+            warnings.append(f"предупреждение: {folder.relative_to(NOTES_DIR).as_posix()}/: "
+                            f"нет _section.md с русским title — на сайте раздел называется «{folder.name}»")
     return warnings
+
+
+VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"}
+
+
+class TagCheck(HTMLParser):
+    """Незакрытые и лишние теги на готовой странице: из-за них едет вёрстка."""
+
+    def __init__(self):
+        super().__init__()
+        self.stack, self.errors = [], []
+
+    def handle_starttag(self, tag, attrs):
+        if tag not in VOID:
+            self.stack.append((tag, self.getpos()[0]))
+
+    def handle_endtag(self, tag):
+        if tag in VOID:
+            return
+        if not any(t == tag for t, _ in self.stack):
+            self.errors.append(f"строка {self.getpos()[0]}: лишний </{tag}>")
+            return
+        while self.stack:
+            t, line = self.stack.pop()
+            if t == tag:
+                break
+            self.errors.append(f"строка {line}: <{t}> не закрыт")
+
+
+def check_page(name, text):
+    """Проверка вёрстки страницы site/<name>: теги, каркас, неподставленные {{...}}."""
+    checker = TagCheck()
+    checker.feed(text)
+    errors = checker.errors + [f"строка {line}: <{t}> не закрыт" for t, line in checker.stack]
+    if "{{" in text:
+        errors.append("остался неподставленный {{...}} из шаблона")
+    for part in ('<main class="main">', '<aside class="sb"'):
+        if part not in text:
+            errors.append(f"нет {part} — сломан каркас страницы")
+    return [f"предупреждение: site/{name}: вёрстка: {e}" for e in errors[:5]]
 
 
 # ── markdown ───────────────────────────────────────────────
@@ -173,7 +232,7 @@ def sidebar(notes, page, current=None):
             f'<div class="grp-b ws-notes">{rows}</div></div>'
         )
 
-    about = (TEMPLATES.parent / "notes" / "_about.md").exists()
+    about = ABOUT.exists()
     return f"""  <aside class="sb" id="sb">
     <div class="sb-head">
       <div class="avatar">{esc(AVATAR)}</div>
@@ -330,10 +389,9 @@ def build_graph(notes):
 
 
 def build_about(notes):
-    path = NOTES_DIR / "_about.md"
-    if not path.exists():
+    if not ABOUT.exists():
         return None
-    text = FRONTMATTER.sub("", path.read_text(encoding="utf-8"))
+    text = FRONTMATTER.sub("", ABOUT.read_text(encoding="utf-8"))
     content = f"""<div class="page"><div class="note-body">
   <div class="crumbs">about</div>
   <h1>{esc(AUTHOR)}</h1>
@@ -341,6 +399,25 @@ def build_about(notes):
   <div class="sec" style="margin-top:28px">{render_md(text, notes)}</div>
 </div></div>"""
     return page(notes, title="Обо мне", description=SUBTITLE, page_kind="about", content=content)
+
+
+def build_index(notes):
+    """INDEX.md: разделы → заметки с title, summary и разделами — агент читает его первым."""
+    groups = {}
+    for n in notes.values():
+        groups.setdefault(str(Path(n["path"]).parent), []).append(n)
+    lines = ["# Каталог заметок", "", "Собирается `build.py` при каждой сборке — руками не править.",
+             "Строка: `имя` — title: summary · разделы заметки.", ""]
+    for folder in sorted(groups):
+        lines.append(f"## {groups[folder][0]['ws']} ({'notes/' + folder + '/' if folder != '.' else 'notes/'})")
+        for n in sorted(groups[folder], key=lambda n: n["slug"]):
+            sections = [t for t, _ in split_sections(n["body"])[1] if t.lower() not in SKIP]
+            lines.append(f"- `{n['slug']}` — {n['title']}: {n['summary'] or '(нет summary)'}"
+                         f" · {', '.join(sections) or 'нет разделов'}")
+        lines.append("")
+    orphans = sorted(n["slug"] for n in notes.values() if not n["related"])
+    lines += ["## Без связей", "", ", ".join(f"`{s}`" for s in orphans) or "нет", ""]
+    return "\n".join(lines)
 
 
 def main():
@@ -351,18 +428,18 @@ def main():
     for f in ("style.css", "graph.js", "cat.js"):
         shutil.copy(TEMPLATES / f, OUT / f)
 
-    (OUT / "index.html").write_text(build_graph(notes), encoding="utf-8")
-    (OUT / "all.html").write_text(build_all(notes), encoding="utf-8")
-    about = build_about(notes)
-    if about:
-        (OUT / "about.html").write_text(about, encoding="utf-8")
-    for n in notes.values():
-        (OUT / f'{n["slug"]}.html').write_text(build_note(n, notes), encoding="utf-8")
-
+    pages = {"index.html": build_graph(notes), "all.html": build_all(notes), "about.html": build_about(notes)}
+    pages |= {f'{n["slug"]}.html': build_note(n, notes) for n in notes.values()}
     warnings = check(notes)
+    for name, text in pages.items():
+        if text:
+            (OUT / name).write_text(text, encoding="utf-8")
+            warnings += check_page(name, text)
+
     for line in warnings:
         print(line)
-    print(f"собрано: {len(notes)} заметок → {OUT}")
+    INDEX.write_text(build_index(notes), encoding="utf-8")
+    print(f"собрано: {len(notes)} заметок → {OUT}, каталог → {INDEX.name}")
     print(f"предупреждений: {len(warnings)}")
 
 
