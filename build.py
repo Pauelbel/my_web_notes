@@ -126,6 +126,8 @@ def check(notes):
         status = n["meta"].get("status", "draft")
         if status not in STATUSES:
             warn(f"неизвестный status '{status}', можно: {', '.join(STATUSES)} (собрано как draft)")
+        if "/" not in n["path"]:
+            warn("заметка вне раздела — спроси пользователя, в какой раздел notes/<раздел>/ её положить")
         if not SLUG.match(n["slug"]):
             warn("имя файла — латиницей через дефис (redis.md, rest-api.md); по-русски пишется title")
         for slug in n["broken"]:
@@ -188,7 +190,8 @@ def render_md(text, notes):
             return f"[{label}]({slug}.html)"
         return f'<span class="broken" title="заметки пока нет">{esc(label)}</span>'
 
-    return markdown.markdown(WIKI.sub(wiki, text), extensions=["fenced_code", "tables", "sane_lists"])
+    out = markdown.markdown(WIKI.sub(wiki, text), extensions=["fenced_code", "tables", "sane_lists"])
+    return out.replace("<table>", '<div class="table-wrap"><table>').replace("</table>", "</table></div>")
 
 
 def split_sections(body):
