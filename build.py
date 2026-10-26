@@ -4,6 +4,7 @@
 Запуск:  python build.py
 Нужно:   pip install markdown
 """
+import hashlib
 import html
 import json
 import math
@@ -425,14 +426,18 @@ def main():
     if OUT.exists():
         shutil.rmtree(OUT)
     OUT.mkdir()
+    assets = {}  # файл → файл?v=отпечаток: изменился файл — браузер не берёт старый из кеша
     for f in ("style.css", "graph.js", "cat.js"):
         shutil.copy(TEMPLATES / f, OUT / f)
+        assets[f'"{f}"'] = f'"{f}?v={hashlib.md5((TEMPLATES / f).read_bytes()).hexdigest()[:8]}"'
 
     pages = {"index.html": build_graph(notes), "all.html": build_all(notes), "about.html": build_about(notes)}
     pages |= {f'{n["slug"]}.html': build_note(n, notes) for n in notes.values()}
     warnings = check(notes)
     for name, text in pages.items():
         if text:
+            for old, new in assets.items():
+                text = text.replace(old, new)
             (OUT / name).write_text(text, encoding="utf-8")
             warnings += check_page(name, text)
 

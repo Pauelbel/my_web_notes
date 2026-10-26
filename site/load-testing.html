@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3/dist/tabler-icons.min.css">
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=f95fcccb">
 <script>
 try {
   var t = localStorage.getItem('qa-notes:theme'); if (t) document.documentElement.dataset.theme = t;
@@ -33,9 +33,9 @@ try {
       <button class="icon-btn" id="sb-toggle" type="button" aria-label="Свернуть меню"><i class="ti ti-layout-sidebar-left-collapse"></i></button>
     </div>
     <a class="it" href="index.html"><i class="ti ti-share"></i><span class="lbl">Граф</span></a>
-    <a class="it" href="all.html"><i class="ti ti-list"></i><span class="lbl">Все заметки</span><span class="cnt">2</span></a>
+    <a class="it" href="all.html"><i class="ti ti-list"></i><span class="lbl">Все заметки</span><span class="cnt">3</span></a>
     <div class="hr"></div>
-    <div class="grp ws"><button class="it grp-h" type="button"><i class="ti ti-folder"></i><span class="lbl">Нагрузочное тестирование</span><span class="n">· 1</span></button><div class="grp-b ws-notes"><a class="it on" href="load-testing.html"><span class="dot draft"></span><span class="lbl">Нагрузочное тестирование – виды и методы</span></a></div></div><div class="grp ws closed"><button class="it grp-h" type="button"><i class="ti ti-folder"></i><span class="lbl">Протоколы</span><span class="n">· 1</span></button><div class="grp-b ws-notes"><a class="it" href="xml.html"><span class="dot draft"></span><span class="lbl">XML</span></a></div></div>
+    <div class="grp ws closed"><button class="it grp-h" type="button"><i class="ti ti-folder"></i><span class="lbl">misc</span><span class="n">· 1</span></button><div class="grp-b ws-notes"><a class="it" href="resources.html"><span class="dot draft"></span><span class="lbl">Полезные инструменты для AI и разработки</span></a></div></div><div class="grp ws"><button class="it grp-h" type="button"><i class="ti ti-folder"></i><span class="lbl">Нагрузочное тестирование</span><span class="n">· 1</span></button><div class="grp-b ws-notes"><a class="it on" href="load-testing.html"><span class="dot draft"></span><span class="lbl">Нагрузочное тестирование – виды и методы</span></a></div></div><div class="grp ws closed"><button class="it grp-h" type="button"><i class="ti ti-folder"></i><span class="lbl">Протоколы</span><span class="n">· 1</span></button><div class="grp-b ws-notes"><a class="it" href="xml.html"><span class="dot draft"></span><span class="lbl">XML</span></a></div></div>
     <div class="sb-spacer"></div>
     <div class="hr"></div>
     <a class="it" href="about.html"><i class="ti ti-user"></i><span class="lbl">Обо мне</span></a>
@@ -55,9 +55,8 @@ try {
     <h1>Нагрузочное тестирование – виды и методы<span class="pill draft">draft</span></h1>
     <p class="lead">классификация типов performance-тестов и анализ узких мест</p>
     <div class="meta"><span><i class="ti ti-calendar"></i>26 окт 2026</span><span><i class="ti ti-clock"></i>1 мин</span></div>
-    
-    <div class="sec-h" id="что-это"><span class="num">01</span><h2>Что это</h2></div><div class="sec"><p>Виды нагрузочного тестирования для оценки производительности и стабильности системы.</p></div><div class="sec-h" id="настройки"><span class="num">02</span><h2>Настройки</h2></div><div class="sec"><h3>Виды performance-тестов</h3>
-<table>
+    <div class="related"><span>Связано:</span><a class="chip" href="resources.html"><span class="dot draft"></span>Полезные инструменты для AI и разработки</a></div>
+    <div class="sec-h" id="что-это"><span class="num">01</span><h2>Что это</h2></div><div class="sec"><p>Виды нагрузочного тестирования для оценки производительности и стабильности системы.</p></div><div class="sec-h" id="виды-тестов"><span class="num">02</span><h2>Виды тестов</h2></div><div class="sec"><table>
 <thead>
 <tr>
 <th style="text-align: left;">Вид</th>
@@ -110,9 +109,7 @@ try {
 <td style="text-align: left;">1-2 часа</td>
 </tr>
 </tbody>
-</table>
-<h3>Bottleneck Analysis (Анализ узких мест)</h3>
-<ul>
+</table></div><div class="sec-h" id="узкие-места"><span class="num">03</span><h2>Узкие места</h2></div><div class="sec"><ul>
 <li><strong>CPU</strong>: 90%+ user time → алгоритмические проблемы, отсутствие кэширования.</li>
 <li><strong>Memory</strong>: рост потребления → утечки (memory leak), неоптимальные структуры.</li>
 <li><strong>Disk I/O</strong>: высокий await → медленная БД, неоптимальные запросы, отсутствие индексов.</li>
@@ -121,7 +118,7 @@ try {
 <li><strong>External APIs</strong>: медленные ответы → добавить timeout, circuit breaker, fallback.</li>
 </ul></div>
   </article>
-  <nav class="toc"><div class="toc-h">На странице</div><a href="#что-это">Что это</a><a href="#настройки">Настройки</a></nav>
+  <nav class="toc"><div class="toc-h">На странице</div><a href="#что-это">Что это</a><a href="#виды-тестов">Виды тестов</a><a href="#узкие-места">Узкие места</a></nav>
 </div>
   </main>
 </div>
@@ -226,7 +223,7 @@ try {
   }
 })();
 </script>
-<script src="cat.js"></script>
+<script src="cat.js?v=c2a6c332"></script>
 
 </body>
 </html>
