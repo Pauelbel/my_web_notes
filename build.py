@@ -24,7 +24,7 @@ AUTHOR = "Павел Белов"
 AVATAR = "ПБ"
 SUBTITLE = "QA · чек-листы"
 GITHUB = "https://github.com/Pauelbel"
-INTRO = "Технология → зачем она → как бы я её тестировал"
+INTRO = "Граф"
 
 STATUSES = {"done": "done", "draft": "draft", "todo": "todo"}
 CHECKLIST = {"как тестировать", "чек-лист"}              # раздел-чек-лист
