@@ -15,6 +15,7 @@ python -m http.server -d site 8000    # смотреть на http://localhost:8
 ```
 notes/<воркспейс>/<slug>.md   заметки (папка = воркспейс в меню)
 notes/_about.md               страница «Обо мне»
+AGENTS.md                     правила для агента: как класть заметки, собирать, публиковать
 templates/base.html           каркас страницы
 templates/style.css           тема (цвета в :root, светлая тема ниже)
 templates/graph.js            граф на главной

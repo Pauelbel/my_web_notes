@@ -54,7 +54,7 @@ try {
     <div class="crumbs">notes / protocols / <b>xml.md</b></div>
     <h1>XML<span class="pill draft">draft</span></h1>
     <p class="lead">текстовый формат для структурированных данных с тегами, схемами и пространствами имён</p>
-    <div class="meta"><span><i class="ti ti-calendar"></i>24 окт 2026</span><span><i class="ti ti-clock"></i>2 мин</span></div>
+    <div class="meta"><span><i class="ti ti-calendar"></i>26 окт 2026</span><span><i class="ti ti-clock"></i>2 мин</span></div>
     
     <div class="sec-h" id="что-это"><span class="num">01</span><h2>Что это</h2></div><div class="sec"><p>Язык разметки для обмена структурированными данными: дерево элементов с атрибутами, строгий синтаксис, структура описывается схемой (XSD, реже DTD). Через пространства имён (<code>xmlns</code>) в одном документе смешиваются словари из разных схем.</p>
 <p>Где применяется: SOAP и старые enterprise-API, банковские и государственные интеграции (ISO 20022, ЭДО, ФНС), конфиги (Maven <code>pom.xml</code>, Android, Spring), RSS/Atom, SVG, офисные форматы (<code>.docx</code>, <code>.xlsx</code>).</p></div><div class="sec-h" id="как-тестировать"><span class="num">02</span><h2>Как тестировать</h2><span class="aside"><span id="ck-count">0 / 0</span> · <button class="ck-reset" id="ck-reset" type="button">сбросить</button></span></div><div class="card checklist"><div class="ck-bar"><span id="ck-bar"></span></div><p>Чем: <code>xmllint</code> (<code>--noout --schema</code> для проверки по XSD), XPath для проверок значений, SoapUI или Postman для SOAP, pytest + <code>lxml</code>.</p>

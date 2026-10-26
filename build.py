@@ -36,6 +36,7 @@ MONTHS = "янв фев мар апр мая июн июл авг сен окт 
 TEMPLATE = (TEMPLATES / "base.html").read_text(encoding="utf-8")
 FRONTMATTER = re.compile(r"\A---\n(.*?)\n---\n", re.S)
 WIKI = re.compile(r"\[\[([\w-]+)(?:\|([^\]]+))?\]\]")
+SLUG = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 CHECK_ITEM = re.compile(r"<li>\[( |x|X)\]\s*(.*?)</li>", re.S)
 
 
@@ -64,13 +65,13 @@ def parse_note(path):
                 meta[k.strip()] = v.strip()
         text = text[m.end():]
     status = meta.get("status", "draft")
-    if status not in STATUSES:
-        raise SystemExit(f"{path}: неизвестный status '{status}', можно: {', '.join(STATUSES)}")
     return {
+        "path": path.relative_to(NOTES_DIR).as_posix(),
+        "meta": meta,
         "slug": path.stem,
         "title": meta.get("title", path.stem),
         "ws": meta.get("category", path.parent.name if path.parent != NOTES_DIR else "misc"),
-        "status": status,
+        "status": status if status in STATUSES else "draft",
         "summary": meta.get("summary", ""),
         "updated": meta.get("updated", ""),
         "body": text,
@@ -88,12 +89,32 @@ def load_notes():
             raise SystemExit(f"дубль slug '{n['slug']}': {path}")
         notes[n["slug"]] = n
     for n in notes.values():
+        n["broken"] = sorted(n["links"] - notes.keys())
         n["links"] &= notes.keys()
         n["links"].discard(n["slug"])
     for n in notes.values():
         back = {o["slug"] for o in notes.values() if n["slug"] in o["links"]}
         n["related"] = sorted(n["links"] | back, key=lambda s: notes[s]["title"].lower())
     return notes
+
+
+def check(notes):
+    """Предупреждения по заметкам: сборку не останавливают, агент читает их в выводе и правит."""
+    warnings = []
+    for n in notes.values():
+        def warn(text):
+            warnings.append(f"предупреждение: {n['path']}: {text}")
+        for key in ("title", "summary"):
+            if not n["meta"].get(key):
+                warn(f"нет {key} во frontmatter")
+        status = n["meta"].get("status", "draft")
+        if status not in STATUSES:
+            warn(f"неизвестный status '{status}', можно: {', '.join(STATUSES)} (собрано как draft)")
+        if not SLUG.match(n["slug"]):
+            warn("имя файла — латиницей через дефис (redis.md, rest-api.md); по-русски пишется title")
+        for slug in n["broken"]:
+            warn(f"[[{slug}]] — такой заметки нет")
+    return warnings
 
 
 # ── markdown ───────────────────────────────────────────────
@@ -338,7 +359,11 @@ def main():
     for n in notes.values():
         (OUT / f'{n["slug"]}.html').write_text(build_note(n, notes), encoding="utf-8")
 
+    warnings = check(notes)
+    for line in warnings:
+        print(line)
     print(f"собрано: {len(notes)} заметок → {OUT}")
+    print(f"предупреждений: {len(warnings)}")
 
 
 if __name__ == "__main__":
