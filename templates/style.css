@@ -250,6 +250,14 @@ pre code { padding: 0; border: 0; background: none; }
 .sec li { margin: 2px 0; }
 .sec li::marker { color: var(--faint); }
 .sec h3 { margin: 22px 0 6px; font-size: 15px; font-weight: 500; color: var(--head); }
+.sec table {
+  display: block; max-width: 100%; overflow-x: auto; margin: 4px 0 16px;
+  border: 1px solid var(--line-2); border-radius: 10px; border-spacing: 0; font-size: 14px;
+}
+.sec th, .sec td { padding: 8px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
+.sec th { font-weight: 500; color: var(--head); background: var(--card); white-space: nowrap; }
+.sec tr:last-child td { border-bottom: 0; }
+.sec tbody tr:hover td { background: var(--hover); }
 
 .risks { padding: 14px 18px; }
 .risks ul { list-style: none; padding: 0; margin: 0; }
