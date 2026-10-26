@@ -1,5 +1,5 @@
 ---
-title: Замерять качество RAG можно через Ragas или DeepEval
+title: Как тестировать RAG
 status: draft
 summary: Инструменты для оценки качества RAG-систем — Ragas и DeepEval
 updated: 2026-10-26
